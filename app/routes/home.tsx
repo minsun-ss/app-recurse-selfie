@@ -64,7 +64,7 @@ export function WebcamDisplay() {
               value={inputText || ""}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Optional Text"
-              className="border p-4 w-[80%] mt-4"
+              className="border bg-white text-black placeholder-gray-400 p-4 w-[80%] mt-4"
             />
           </div>
 

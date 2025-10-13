@@ -69,6 +69,7 @@ export function convertImage(
       const textY = 490 + 60;
       ctx.fillText(today.toISOString().split("T")[0], textX, textY);
 
+      // don't ask me how this works i don't remember
       const idealHeight = (img.width * 342) / 456;
       const idealX = 0;
       const idealY = (img.height - idealHeight) / 2;
@@ -87,8 +88,6 @@ export function convertImage(
         342,
       );
 
-      // 456/342
-      // (img.height - 342) / 2;
       resolve(canvas.toDataURL("image/png"));
     };
     img.src = data;
@@ -111,15 +110,35 @@ export async function encodeImage(data: string, optionalText: string = null) {
     printerModel: "epson-tm-t88v",
   });
 
+  const recurseTitleImg = new Image();
+  const ollie = new Image();
+  ollie.src = "/ollie.png";
+  await new Promise((res) => {
+    ollie.onload = res;
+  });
+
+  const title = await new Promise((resolve) => {
+    const rcCanvas = document.createElement("canvas");
+    const ctx = rcCanvas.getContext("2d");
+    rcCanvas.width = 496;
+    rcCanvas.height = 72;
+
+    ctx.fillStyle = "black";
+    ctx.font = "bold 48px Courier";
+    ctx.fillText("RECURSE CENTER", 85, 60);
+    ctx.drawImage(ollie, 0, 0, 72, 72);
+    resolve(rcCanvas.toDataURL("image/png"));
+  });
+
+  await new Promise((resolve) => {
+    recurseTitleImg.onload = resolve;
+    recurseTitleImg.src = title;
+  });
+
   encoder
     .initialize()
-    .align("center")
-    .bold(true)
-    .width(2)
-    .line("RECURSE CENTER")
-    .width(1)
-    .bold(false)
     .align("left")
+    .image(recurseTitleImg, 496, 72, "atkinson")
     .image(img, img.width, img.height, "atkinson")
     .align("center");
 
