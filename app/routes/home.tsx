@@ -84,15 +84,16 @@ export function WebcamDisplay() {
               : "Take a picture!"}
           </button>
         </div>
-        {imgSrc && (
-          <div className="mt-6">
-            <img src={imgSrc} alt="Captured" className="mx-auto" />
-          </div>
-        )}
       </div>
     </div>
   );
 }
+
+// {imgSrc && (
+//   <div className="mt-6">
+//     <img src={imgSrc} alt="Captured" className="mx-auto" />
+//   </div>
+// )}
 
 export default function Home() {
   return (

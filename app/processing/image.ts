@@ -192,7 +192,7 @@ export async function renderPhotoAndPrint(
 
   // sends the receipt to print
   const endpoint = "/receipt/escpos";
-  // await sendReceipt(endpoint, b64_version);
+  await sendReceipt(endpoint, b64_version);
 }
 
 /**
