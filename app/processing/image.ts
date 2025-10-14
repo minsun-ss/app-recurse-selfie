@@ -1,13 +1,17 @@
 import ReceiptPrinterEncoder from "@point-of-sale/receipt-printer-encoder";
-import fs from "fs";
+import {
+  COMPUTER_IMAGE_MAX_WIDTH,
+  PHOTO_IMAGE_MAX_HEIGHT,
+  PHOTO_IMAGE_MAX_WIDTH,
+  RECURSE_COMPUTER_BORDER,
+} from "./constants";
 
 /**
- * Resizes the image to something appropriate for the Recurse
- * receipt printer (512 px wide). Although it's 512 max, everything is set to 496
- * for decent centering
+ * Resizes the photo screenshot to appropriately render a Recurse computer
+ * image to something appropriate for the Recurse and resizes it
  *
- * @param data
- * @param targetWidth
+ * @param data - screenshot from the webcam
+ * @param targetWidth - target width of the final image
  * @returns
  */
 export function convertImage(
@@ -15,52 +19,59 @@ export function convertImage(
   targetWidth: number,
 ): Promise<string> {
   return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = async () => {
+    const screenshotImg = new Image();
+    screenshotImg.src = data;
+    console.log(
+      "Screenshot: " + screenshotImg.width + " " + screenshotImg.height,
+    );
+
+    screenshotImg.onload = async () => {
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-      console.log(img.width + " " + img.height);
-
-      const computerBorder = 20;
-      const imageTargetWidth = targetWidth - computerBorder * 2;
-      const scale = imageTargetWidth / img.width;
+      const imageTargetWidth = targetWidth - RECURSE_COMPUTER_BORDER * 2;
+      const scale = imageTargetWidth / screenshotImg.width;
       const imageWidth = imageTargetWidth;
-      const imageHeight = img.height * scale;
+      const imageHeight = screenshotImg.height * scale;
       console.log("image area: " + imageWidth + " " + imageHeight);
 
-      const recurse_bg = new Image();
-      recurse_bg.src = "/recurse.png";
+      const recurseComputerImg = new Image();
+      recurseComputerImg.src = "/recurse.png";
       await new Promise((res) => {
-        recurse_bg.onload = res;
+        recurseComputerImg.onload = res;
       });
-      const recurse_scale = targetWidth / recurse_bg.width;
-      const recurse_width = targetWidth;
-      const recurse_height = recurse_bg.height * recurse_scale;
-      console.log("recurse bg " + recurse_bg.width + " " + recurse_bg.height);
-
-      // setting up the final canvas
-      canvas.width = recurse_width;
-      canvas.height = Math.floor(recurse_height / 8) * 8;
-
-      // draws the computer
-      ctx.drawImage(
-        recurse_bg,
-        0,
-        0,
-        recurse_bg.width,
-        recurse_bg.height,
-        0,
-        0,
-        recurse_width,
-        Math.floor(recurse_height / 8) * 8,
+      const recurseScale = targetWidth / recurseComputerImg.width;
+      const recurseWidth = targetWidth;
+      const recurseHeight = recurseComputerImg.height * recurseScale;
+      console.log(
+        "Recurse computer size: " +
+          recurseComputerImg.width +
+          " " +
+          recurseComputerImg.height,
       );
 
-      ctx.filter = "grayscale(100%)";
-      ctx.fillStyle = "white";
-      ctx.fillRect(80, 490, 496 - 160, 90);
+      // sets up the canvas
+      canvas.width = recurseWidth;
+      canvas.height = Math.floor(recurseHeight / 8) * 8;
+
+      // casts the recurse computer into canvas and resizes
+      ctx.drawImage(
+        recurseComputerImg,
+        0,
+        0,
+        recurseComputerImg.width,
+        recurseComputerImg.height,
+        0,
+        0,
+        recurseWidth,
+        Math.floor(recurseHeight / 8) * 8,
+      );
 
       // set up the date
+      ctx.filter = "grayscale(100%)";
+      ctx.fillStyle = "white";
+      ctx.fillRect(80, 490, COMPUTER_IMAGE_MAX_WIDTH - 160, 90);
       ctx.fillStyle = "black";
       ctx.font = "bold 48px Courier";
       ctx.textAlign = "center";
@@ -69,56 +80,68 @@ export function convertImage(
       const textY = 490 + 60;
       ctx.fillText(today.toISOString().split("T")[0], textX, textY);
 
-      // don't ask me how this works i don't remember
-      const idealHeight = (img.width * 342) / 456;
+      // Becuase the screenshot from the webcam may be too arbitrarily wide or
+      // long, we must not only select the appropriate part of the original
+      // canvas to target, but also resize as well
+
+      // TODO: do the resize when the camera is wider than taller and vice versa
+      const idealHeight =
+        (screenshotImg.width * PHOTO_IMAGE_MAX_HEIGHT) / PHOTO_IMAGE_MAX_WIDTH;
+      const idealWidth = screenshotImg.width;
       const idealX = 0;
-      const idealY = (img.height - idealHeight) / 2;
-      const idealWidth = img.width;
+      const idealY = (screenshotImg.height - idealHeight) / 2;
 
       // this draws the photobooth photo
       ctx.drawImage(
-        img,
+        screenshotImg,
         idealX,
         idealY,
         idealWidth,
         idealHeight,
-        computerBorder,
-        computerBorder + 10,
+        RECURSE_COMPUTER_BORDER,
+        RECURSE_COMPUTER_BORDER + 10,
         456,
-        342,
+        PHOTO_IMAGE_MAX_HEIGHT,
       );
 
+      // return the canvas
       resolve(canvas.toDataURL("image/png"));
     };
-    img.src = data;
   });
 }
 
-export async function encodeImage(data: string, optionalText: string = null) {
-  const response = await fetch(data);
-  const blob = await response.blob();
-
-  const img = new Image();
+/**
+ * Renders the photobooth item and sends it to the printer.
+ *
+ * @param datascreenshot of the item
+ * @param optionalText optional text for the photobooth
+ */
+export async function renderPhotoAndPrint(
+  data: string,
+  optionalText: string | null = null,
+) {
+  const photoImg = new Image();
+  const blob = await fetch(data).then((r) => r.blob());
   const imgUrl = URL.createObjectURL(blob);
+
   await new Promise((resolve) => {
-    img.onload = resolve;
-    img.src = imgUrl;
+    photoImg.onload = resolve;
+    photoImg.src = imgUrl;
   });
 
-  console.log(img.width + " " + img.height);
-  let encoder = new ReceiptPrinterEncoder({
-    printerModel: "epson-tm-t88v",
-    imageMode: "raster",
-  });
+  console.log("Screenshot: " + photoImg.width + " " + photoImg.height);
 
+  // setting up the title logo
   const recurseTitleImg = new Image();
+
+  // loading the octopus image
   const ollie = new Image();
   ollie.src = "/ollie.png";
   await new Promise((res) => {
     ollie.onload = res;
   });
 
-  const title = await new Promise((resolve) => {
+  const title = await new Promise<string>((resolve) => {
     const rcCanvas = document.createElement("canvas");
     const ctx = rcCanvas.getContext("2d");
     rcCanvas.width = 496;
@@ -136,19 +159,25 @@ export async function encodeImage(data: string, optionalText: string = null) {
     recurseTitleImg.src = title;
   });
 
+  // setting up the receipt
+  let encoder = new ReceiptPrinterEncoder({
+    printerModel: "epson-tm-t88v",
+    imageMode: "raster", // this is required for pretty images
+  });
+
   encoder
     .initialize()
     .align("left")
     .image(recurseTitleImg, 496, 72, "atkinson")
-    .image(img, img.width, img.height, "atkinson")
+    .image(photoImg, photoImg.width, photoImg.height, "atkinson")
     .align("center");
 
+  // add the optional text coming from photobooth
   if (optionalText) {
     encoder = encoder.line(optionalText);
   }
-  console.log("Optional Text " + optionalText);
 
-  let result = encoder
+  const result = encoder
     .line("------------------------------------------")
     .line("Thank you have a nice day!")
     .line("www.recurse.com")
@@ -156,14 +185,22 @@ export async function encodeImage(data: string, optionalText: string = null) {
     .line("")
     .cut("full")
     .encode();
+
+  // encode the bytearray to a base64 version
   const b64_version = btoa(String.fromCharCode(...result));
   console.log(b64_version);
-  console.log(result);
 
+  // sends the receipt to print
   const endpoint = "/receipt/escpos";
-  await sendReceipt(endpoint, b64_version);
+  // await sendReceipt(endpoint, b64_version);
 }
 
+/**
+ * Sends a request to the receipt printer.
+ *
+ * @param url receipt printer URL
+ * @param photoData processed data to send
+ */
 async function sendReceipt(url: string, photoData: string) {
   const response = await fetch(url, {
     method: "POST",
@@ -174,13 +211,5 @@ async function sendReceipt(url: string, photoData: string) {
     body: JSON.stringify({ buffer: photoData }),
   });
   const resp = await response.json();
-  console.log(resp);
+  console.log("JSON response : " + resp);
 }
-
-// // turns out you can't use filewriter on client side code
-// const fileBlob = new Blob([result], { type: "text/plain" });
-// const url = URL.createObjectURL(fileBlob);
-// const a = document.createElement("a");
-// a.href = url;
-// a.download = "output.bin";
-// a.click();

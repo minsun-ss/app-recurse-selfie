@@ -1,7 +1,8 @@
 import React, { useRef, useState, useCallback } from "react";
 import type { Route } from "./+types/home";
 import Webcam from "react-webcam";
-import { convertImage, encodeImage } from "~/processing/image";
+import { convertImage, renderPhotoAndPrint } from "~/processing/image";
+import { COMPUTER_IMAGE_MAX_WIDTH } from "~/processing/constants";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -11,21 +12,25 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
+/**
+ *
+ * @returns
+ */
 export function WebcamDisplay() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [inputText, setInputText] = useState(null);
+  const [inputText, setInputText] = useState<string | null>(null);
 
+  // set up video and style constraints
   const videoConstraints = {
     facingMode: "user",
-    width: { min: 300, ideal: 640 },
-    height: { min: 225, ideal: 480 },
   };
-  const styleConstraints = {
+  const styleConstraints: React.CSSProperties = {
     filter: "grayscale(100%)",
     objectFit: "cover",
   };
-  const webcamRef = useRef(null);
+
+  const webcamRef = useRef<Webcam>(null);
   const capture = useCallback(async () => {
     setCountdown(3);
 
@@ -36,8 +41,8 @@ export function WebcamDisplay() {
 
     const imgSrc = webcamRef.current?.getScreenshot();
     if (imgSrc) {
-      const resized = await convertImage(imgSrc, 496);
-      encodeImage(resized, inputText);
+      const resized = await convertImage(imgSrc, COMPUTER_IMAGE_MAX_WIDTH);
+      renderPhotoAndPrint(resized, inputText);
       setImgSrc(resized);
     }
 
@@ -48,15 +53,15 @@ export function WebcamDisplay() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-white">
-      <div className="text-center">
-        <div className="relative w-full aspect-[4/5]">
+      <div className="flex flex-wrap items-center justify-center text-center gap-8">
+        <div className="relative w-full max-w-md aspect-[3/5]">
           <Webcam
             ref={webcamRef}
             audio={false}
             videoConstraints={videoConstraints}
             style={styleConstraints}
             screenshotFormat="image/png"
-            className="rounded-lg shadow-2xl w-[84.375%] mx-auto pt-[50px]"
+            className="rounded-lg shadow-2xl "
           />
 
           <div>
@@ -72,7 +77,7 @@ export function WebcamDisplay() {
             type="button"
             onClick={capture}
             disabled={countdown != null}
-            className="mt-4 bg-red-600 border-2 border-white rounded-full px-6 py-3 text-xl font-bold text-3xl font-bold text-white mb-6 hover:bg-red-500 active:scale-95 transition-transform"
+            className="mt-4 bg-red-600 border-2 border-white rounded-full px-6 py-3 text-xl font-bold text-white mb-6 hover:bg-red-500 active:scale-95 transition-transform"
           >
             {countdown !== null
               ? `Ready in ${countdown}...`

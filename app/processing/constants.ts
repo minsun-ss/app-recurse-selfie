@@ -1,0 +1,5 @@
+export const COMPUTER_IMAGE_MAX_WIDTH = 496;
+export const PHOTO_IMAGE_MAX_WIDTH = 456;
+export const PHOTO_IMAGE_MAX_HEIGHT = 342;
+export const RECEIPT_MAX_WIDTH = 512;
+export const RECURSE_COMPUTER_BORDER = 20;
