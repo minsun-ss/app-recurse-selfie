@@ -108,6 +108,7 @@ export async function encodeImage(data: string, optionalText: string = null) {
   console.log(img.width + " " + img.height);
   let encoder = new ReceiptPrinterEncoder({
     printerModel: "epson-tm-t88v",
+    imageMode: "raster",
   });
 
   const recurseTitleImg = new Image();
