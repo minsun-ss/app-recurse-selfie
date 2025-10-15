@@ -9,15 +9,7 @@ npm install
 npm run dev
 ```
 
-# Specifications
-
-- Black and white, max width is 512 pixels
-
 # Feature improvements
 
 - recurse stickers
-- custom mssage
-
-# Commands:
-
-https://github.com/NielsLeenheer/ReceiptPrinterEncoder
+- nginx deploy with 301 http -> https forwards
