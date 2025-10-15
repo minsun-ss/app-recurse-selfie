@@ -21,15 +21,16 @@ export default defineConfig({
     },
   ],
   server: {
-    server: {
-      host: "0.0.0.0",
-      https: true,
+    host: "0.0.0.0",
+    https: true,
+  },
+  proxy: {
+    "/receipt": {
+      target: "http://receipt.local:8000",
+      changeOrigin: true,
     },
-    proxy: {
-      "/receipt": {
-        target: "http://receipt.local:8000",
-        changeOrigin: true,
-      },
-    },
+  },
+  preview: {
+    port: 8080,
   },
 });
