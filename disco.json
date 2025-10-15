@@ -1,8 +1,9 @@
 {
-    "version": "1.0",
-    "services": {
-        "web": {
-            "port": 8080
-        }
+  "version": "1.0",
+  "services": {
+    "web": {
+      "port": 8080,
+      "command": "npm run preview"
     }
+  }
 }
