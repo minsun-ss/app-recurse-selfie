@@ -9,15 +9,17 @@ npm install
 npm run dev
 ```
 
-# Specifications
+# Other conveniences'
 
-- Black and white, max width is 512 pixels
+
+```
+make format # formats
+
+make changelog # requires git-cliff
+```
 
 # Feature improvements
 
 - recurse stickers
-- custom mssage
-
-# Commands:
-
-https://github.com/NielsLeenheer/ReceiptPrinterEncoder
+- different frames?
+- preview

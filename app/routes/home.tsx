@@ -4,6 +4,7 @@ import Webcam from "react-webcam";
 import { convertImage, renderPhotoAndPrint } from "~/processing/image";
 import { COMPUTER_IMAGE_MAX_WIDTH } from "~/processing/constants";
 
+// eslint-disable-next-line no-empty-pattern
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Recurse Photobooth" },
@@ -39,7 +40,7 @@ export function WebcamDisplay() {
       setCountdown(i);
     }
 
-    const imgSrc = webcamRef.current?.getScreenshot();
+    setImgSrc(webcamRef.current?.getScreenshot() ?? null);
     if (imgSrc) {
       const resized = await convertImage(imgSrc, COMPUTER_IMAGE_MAX_WIDTH);
       renderPhotoAndPrint(resized, inputText);
@@ -89,6 +90,7 @@ export function WebcamDisplay() {
   );
 }
 
+// TODO:; set up preview
 // {imgSrc && (
 //   <div className="mt-6">
 //     <img src={imgSrc} alt="Captured" className="mx-auto" />
