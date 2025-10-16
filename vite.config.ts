@@ -20,17 +20,4 @@ export default defineConfig({
       },
     },
   ],
-  // server: {
-  //   host: "0.0.0.0",
-  //   proxy: {
-  //     "/receipt": {
-  //       target: "http://receipt.local:8000",
-  //       changeOrigin: true,
-  //     },
-  //   },
-  // },
-  // preview: {
-  //   port: 8080,
-  //   host: "0.0.0.0",
-  // },
 });
