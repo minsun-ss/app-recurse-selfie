@@ -1,0 +1,8 @@
+{
+  "name": "recurse-selfie",
+  "compatibility_date": "2025-10-16",
+  "main": "worker.js",
+  "site": {
+    "bucket": "./build/client",
+  },
+}
