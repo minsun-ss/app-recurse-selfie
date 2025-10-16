@@ -1,6 +1,7 @@
 {
   "name": "recurse-selfie",
   "compatibility_date": "2025-10-16",
+  "compatability_flags": ["nodejs_compat"],
   "main": "worker.js",
   "site": {
     "bucket": "./build/client",
