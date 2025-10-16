@@ -184,9 +184,9 @@ export async function renderPhotoAndPrint(
     .line("")
     .cut("full")
     .encode();
-
+  //
   // sends the receipt to print
-  await sendReceipt("/receipt/escpos", result);
+  // await sendReceipt("/receipt/escpos", result);
 
   if (printerToken != null) {
     await sendReceiptExternalPrinter(result, printerToken);
