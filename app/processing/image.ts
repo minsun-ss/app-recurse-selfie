@@ -1,10 +1,12 @@
+// @ts-expect-error no declaration file
 import ReceiptPrinterEncoder from "@point-of-sale/receipt-printer-encoder";
 import {
   COMPUTER_IMAGE_MAX_WIDTH,
   PHOTO_IMAGE_MAX_HEIGHT,
   PHOTO_IMAGE_MAX_WIDTH,
   RECURSE_COMPUTER_BORDER,
-} from "./constants";
+  NEW_PRINTER_ENDPOINT,
+} from "../constants";
 
 /**
  * Resizes the photo screenshot to appropriately render a Recurse computer
@@ -44,12 +46,6 @@ export function convertImage(
       const recurseScale = targetWidth / recurseComputerImg.width;
       const recurseWidth = targetWidth;
       const recurseHeight = recurseComputerImg.height * recurseScale;
-      console.log(
-        "Recurse computer size: " +
-          recurseComputerImg.width +
-          " " +
-          recurseComputerImg.height,
-      );
 
       // sets up the canvas
       canvas.width = recurseWidth;
@@ -119,6 +115,7 @@ export function convertImage(
 export async function renderPhotoAndPrint(
   data: string,
   optionalText: string | null = null,
+  printerToken: string | null,
 ) {
   const photoImg = new Image();
   const blob = await fetch(data).then((r) => r.blob());
@@ -144,6 +141,8 @@ export async function renderPhotoAndPrint(
   const title = await new Promise<string>((resolve) => {
     const rcCanvas = document.createElement("canvas");
     const ctx = rcCanvas.getContext("2d");
+    if (!ctx) return;
+
     rcCanvas.width = 496;
     rcCanvas.height = 72;
 
@@ -185,31 +184,67 @@ export async function renderPhotoAndPrint(
     .line("")
     .cut("full")
     .encode();
-
-  // encode the bytearray to a base64 version
-  const b64_version = btoa(String.fromCharCode(...result));
-  console.log(b64_version);
-
+  //
   // sends the receipt to print
-  const endpoint = "/receipt/escpos";
-  await sendReceipt(endpoint, b64_version);
+  // await sendReceipt("/receipt/escpos", result);
+
+  if (printerToken != null) {
+    await sendReceiptExternalPrinter(result, printerToken);
+  }
 }
 
+// /**
+//  * Sends a request to the receipt printer.
+//  *
+//  * @param url receipt printer URL
+//  * @param photoData processed data to send
+//  */
+// async function sendReceipt(url: string, photoData: Uint8Array) {
+//   // encode the bytearray to a base64 version
+//   const b64_version = btoa(String.fromCharCode(...photoData));
+//   console.log(b64_version);
+
+//   const response = await fetch(url, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//       "Access-Control-Allow-Origin": "*",
+//     },
+//     body: JSON.stringify({ buffer: photoData }),
+//   });
+//   const resp = await response.json();
+//   console.log("JSON response : " + resp);
+// }
+
 /**
- * Sends a request to the receipt printer.
+ * Sends a request to the receipt printer on the external network.
  *
  * @param url receipt printer URL
  * @param photoData processed data to send
  */
-async function sendReceipt(url: string, photoData: string) {
-  const response = await fetch(url, {
+async function sendReceiptExternalPrinter(
+  photoData: Uint8Array,
+  photoToken: string,
+) {
+  const response = await fetch(NEW_PRINTER_ENDPOINT, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "application/octet-stream",
+      "X-CSRF-Token": photoToken,
     },
-    body: JSON.stringify({ buffer: photoData }),
+    body: photoData,
   });
-  const resp = await response.json();
-  console.log("JSON response : " + resp);
+
+  if (!response.ok) {
+    throw new Error(`HTTP error, status: ${response.status}`);
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType?.includes("application/json")) {
+    const resp = await response.json();
+    console.log("JSON response: ", resp);
+  } else {
+    const text = await response.text();
+    console.log("Non-JSON response: ", text);
+  }
 }

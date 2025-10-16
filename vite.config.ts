@@ -2,14 +2,14 @@ import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
-import basicSsl from "@vitejs/plugin-basic-ssl";
+// import basicSsl from "@vitejs/plugin-basic-ssl";
 
 export default defineConfig({
   plugins: [
     tailwindcss(),
     reactRouter(),
     tsconfigPaths(),
-    basicSsl(),
+    // basicSsl(),
     {
       name: "request-logger",
       configureServer(server) {
@@ -20,18 +20,17 @@ export default defineConfig({
       },
     },
   ],
-  server: {
-    host: "0.0.0.0",
-    https: true,
-    proxy: {
-      "/receipt": {
-        target: "http://receipt.local:8000",
-        changeOrigin: true,
-      },
-    },
-  },
-  preview: {
-    port: 8080,
-    host: "0.0.0.0",
-  },
+  // server: {
+  //   host: "0.0.0.0",
+  //   proxy: {
+  //     "/receipt": {
+  //       target: "http://receipt.local:8000",
+  //       changeOrigin: true,
+  //     },
+  //   },
+  // },
+  // preview: {
+  //   port: 8080,
+  //   host: "0.0.0.0",
+  // },
 });
