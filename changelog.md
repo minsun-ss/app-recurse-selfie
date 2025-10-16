@@ -1,3 +1,8 @@
+## [1.0.5] - 2025-10-16
+
+### 🐛 Bug Fixes
+
+- Updated the worker config for cloudflare pages
 ## [1.0.2] - 2025-10-16
 
 ### 🚀 Features
