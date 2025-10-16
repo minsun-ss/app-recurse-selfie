@@ -1,3 +1,8 @@
+## [1.0.2] - 2025-10-16
+
+### 🚀 Features
+
+- Fix the cloudflare deployment by adding wrangler
 ## [1.0.1] - 2025-10-16
 
 ### 🚀 Features
