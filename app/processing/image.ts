@@ -228,6 +228,7 @@ async function sendReceiptExternalPrinter(
 ) {
   const response = await fetch(NEW_PRINTER_ENDPOINT, {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/octet-stream",
       "X-CSRF-Token": photoToken,
