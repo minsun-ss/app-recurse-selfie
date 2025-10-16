@@ -1,3 +1,16 @@
+## [1.0.7] - 2025-10-16
+
+### 🚀 Features
+
+- Set up wrangler for node js compatability
+
+### 🐛 Bug Fixes
+
+- Updated the worker config for cloudflare pages
+- Ssr rendering?
+- Fix merge conflicts
+- Moved this all over to client side
+
 ## [1.0.6] - 2025-10-16
 
 ### 🚀 Features
