@@ -5,7 +5,6 @@ import tsconfigPaths from "vite-tsconfig-paths";
 // import basicSsl from "@vitejs/plugin-basic-ssl";
 
 export default defineConfig({
-  ssr: false,
   plugins: [
     tailwindcss(),
     reactRouter(),
