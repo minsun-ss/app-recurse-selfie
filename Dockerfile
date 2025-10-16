@@ -1,12 +1,25 @@
-FROM node:latest
+FROM node:22-alpine AS builder
 
-WORKDIR /code
+WORKDIR /app
 
-# start with dependencies to enjoy caching
-COPY ./package.json /code/package.json
-COPY ./package-lock.json /code/package-lock.json
+COPY package*.json ./
 RUN npm ci
 
-# copy rest and build
-COPY . /code/.
+COPY . .
 RUN npm run build
+
+FROM nginx:alpine
+
+COPY --from=builder /app/build/client /usr/share/nginx/html
+
+RUN echo 'server { \
+    listen 80; \
+    location / { \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    try_files $uri $uri/ /index.html; \
+    } \
+    }' > /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

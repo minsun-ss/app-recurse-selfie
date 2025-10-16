@@ -1,11 +1,8 @@
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import type { Route } from "./+types/home";
 import Webcam from "react-webcam";
 import { convertImage, renderPhotoAndPrint } from "~/processing/image";
 import { COMPUTER_IMAGE_MAX_WIDTH } from "~/constants";
-import { parse } from "cookie";
-import { useLoaderData } from "react-router";
-import type { LoaderFunctionArgs } from "react-router";
 
 // eslint-disable-next-line no-empty-pattern
 export function meta({}: Route.MetaArgs) {
@@ -16,27 +13,10 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-
-//     you have to be deployed on a *.recurse.com subdomain, check for a cookie with key ‘receipt_csrf’, and include it as an http header ‘X-CSRF-Token’ in your post request to https://receipt.recurse.com/escpos
-
-// if there's no cookie with key receipt_csrf you need to prompt the user (with a link) to authenticate with receipt printer API, you can just link to https://receipt.recurse.com/login
-export async function loader({ request }: LoaderFunctionArgs) {
-  const cookieHeader = request.headers.get("Cookie");
-  const cookies = cookieHeader ? parse(cookieHeader) : {};
-
-  const printerToken = cookies.receipt_csrf;
-
-  if (process.env.NODE_ENV === "development") {
-    return {
-      isAuthenticated: true,
-      printerToken: "dev-token",
-    };
-  }
-
-  return {
-    isAuthenticated: !!printerToken,
-    printerToken: printerToken,
-  };
+function getCookie(name: string) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift();
 }
 
 /**
@@ -44,22 +24,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
  * @returns
  */
 export function WebcamDisplay() {
-  const { isAuthenticated, printerToken } = useLoaderData();
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
-        <p>Please authenticate with the Recurse Center for access: </p>
-        <p>
-          <a href="https://receipt.recurse.com/login">Login to Recurse</a>
-        </p>
-      </div>
-    );
-  }
+  const [authState, setAuthState] = useState({
+    isAuthenticated: false,
+    printerToken: null as string | null | undefined,
+  });
 
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [inputText, setInputText] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      document.cookie = "receipt_csrf=dev_token; path=/";
+    }
+
+    const printerToken = getCookie("receipt_csrf");
+    setAuthState({
+      isAuthenticated: !!printerToken,
+      printerToken,
+    });
+  }, []);
 
   // set up video and style constraints
   const videoConstraints = {
@@ -80,17 +64,29 @@ export function WebcamDisplay() {
       setCountdown(i);
     }
 
-    setImgSrc(webcamRef.current?.getScreenshot() ?? null);
-    if (imgSrc) {
-      const resized = await convertImage(imgSrc, COMPUTER_IMAGE_MAX_WIDTH);
-      renderPhotoAndPrint(resized, inputText, printerToken);
+    const screenshot = webcamRef.current?.getScreenshot() ?? null;
+    setImgSrc(screenshot);
+    if (screenshot) {
+      const resized = await convertImage(screenshot, COMPUTER_IMAGE_MAX_WIDTH);
+      renderPhotoAndPrint(resized, inputText, authState.printerToken);
       setImgSrc(resized);
     }
 
     // clear on end
     setCountdown(null);
     setInputText(null);
-  }, [webcamRef, inputText]);
+  }, [inputText, authState.printerToken]);
+
+  if (!authState.isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+        <p>Please authenticate with the Recurse Center for access: </p>
+        <p>
+          <a href="https://receipt.recurse.com/login">Login to Recurse</a>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
