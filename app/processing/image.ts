@@ -193,28 +193,28 @@ export async function renderPhotoAndPrint(
   }
 }
 
-/**
- * Sends a request to the receipt printer.
- *
- * @param url receipt printer URL
- * @param photoData processed data to send
- */
-async function sendReceipt(url: string, photoData: Uint8Array) {
-  // encode the bytearray to a base64 version
-  const b64_version = btoa(String.fromCharCode(...photoData));
-  console.log(b64_version);
+// /**
+//  * Sends a request to the receipt printer.
+//  *
+//  * @param url receipt printer URL
+//  * @param photoData processed data to send
+//  */
+// async function sendReceipt(url: string, photoData: Uint8Array) {
+//   // encode the bytearray to a base64 version
+//   const b64_version = btoa(String.fromCharCode(...photoData));
+//   console.log(b64_version);
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-    body: JSON.stringify({ buffer: photoData }),
-  });
-  const resp = await response.json();
-  console.log("JSON response : " + resp);
-}
+//   const response = await fetch(url, {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//       "Access-Control-Allow-Origin": "*",
+//     },
+//     body: JSON.stringify({ buffer: photoData }),
+//   });
+//   const resp = await response.json();
+//   console.log("JSON response : " + resp);
+// }
 
 /**
  * Sends a request to the receipt printer on the external network.
