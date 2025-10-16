@@ -1,3 +1,13 @@
+## [1.0.6] - 2025-10-16
+
+### 🚀 Features
+
+- Set up wrangler for node js compatability
+
+### 🐛 Bug Fixes
+
+- Fix merge conflicts
+
 ## [1.0.5] - 2025-10-16
 
 ### 🐛 Bug Fixes
