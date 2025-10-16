@@ -9,7 +9,17 @@ npm install
 npm run dev
 ```
 
+# Other conveniences'
+
+
+```
+make format # formats
+
+make changelog # requires git-cliff
+```
+
 # Feature improvements
 
 - recurse stickers
-- nginx deploy with 301 http -> https forwards
+- different frames?
+- preview
