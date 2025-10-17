@@ -1,30 +1,16 @@
-## [1.0.8] - 2025-10-16
+## [1.0.3] - 2025-10-16
 
 ### 🐛 Bug Fixes
 
 - Spa requires assets to be a directory and not a bucket
-
-## [1.0.7] - 2025-10-16
-
-### 🐛 Bug Fixes
-
 - Updated the worker config for cloudflare pages
-
-## [1.0.6] - 2025-10-16
-
-### 🚀 Features
-
 - Set up wrangler for node js compatability
+- fixed useState ordering
+- removed superfluous _redirect file
 
 ### 🐛 Bug Fixes
 
 - Fix merge conflicts
-
-## [1.0.5] - 2025-10-16
-
-### 🐛 Bug Fixes
-
-- Updated the worker config for cloudflare pages
 
 ## [1.0.2] - 2025-10-16
 
