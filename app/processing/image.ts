@@ -96,7 +96,7 @@ export function convertImage(
         idealHeight,
         RECURSE_COMPUTER_BORDER,
         RECURSE_COMPUTER_BORDER + 10,
-        456,
+        PHOTO_IMAGE_MAX_WIDTH,
         PHOTO_IMAGE_MAX_HEIGHT,
       );
 
@@ -115,7 +115,7 @@ export function convertImage(
 export async function renderPhotoAndPrint(
   data: string,
   optionalText: string | null = null,
-  printerToken: string | null,
+  printerToken: string | null | undefined,
 ) {
   const photoImg = new Image();
   const blob = await fetch(data).then((r) => r.blob());

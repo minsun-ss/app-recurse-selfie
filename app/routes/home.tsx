@@ -20,7 +20,8 @@ function getCookie(name: string) {
 }
 
 /**
- *
+ * The beautiful webcam display. Note to self, imgSrc isn't used, but could be
+ * (for previews!) Future feature release, eh?
  * @returns
  */
 export function WebcamDisplay() {
@@ -29,7 +30,8 @@ export function WebcamDisplay() {
     printerToken: null as string | null | undefined,
   });
 
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [imgSrc, setImgSrc] = useState<string | null>(null); // we will use imgSrc eventually
   const [countdown, setCountdown] = useState<number | null>(null);
   const [inputText, setInputText] = useState<string | null>(null);
 
@@ -95,8 +97,8 @@ export function WebcamDisplay() {
 
   return (
     <>
-      <div className="flex items-center justify-center h-[calc(100vh-3rem)] bg-white">
-        <div className="flex flex-col lg:flex-row items-center justify-center text-center gap-8">
+      <div className="flex items-center justify-center h-[calc(100vh-3rem)] text-black bg-white dark:bg-gray-900 dark:text-white">
+        <div className="flex flex-col min-[800px]:flex-row items-center justify-center text-center">
           <div className="relative w-full max-w-md flex flex-col items-center">
             <Webcam
               ref={webcamRef}
@@ -120,7 +122,7 @@ export function WebcamDisplay() {
             type="button"
             onClick={capture}
             disabled={countdown != null}
-            className="mt-2 bg-red-600 border-2 border-white rounded-full px-6 py-3 text-xl font-bold text-white hover:bg-red-500 active:scale-95 transition-transform"
+            className="mt-2 min-[800px]:ml-8  bg-red-600 border-2 border-white rounded-full px-6 py-3 text-xl font-bold text-white hover:bg-red-500 active:scale-95 transition-transform"
           >
             {countdown !== null
               ? `Ready in ${countdown}...`
@@ -128,7 +130,7 @@ export function WebcamDisplay() {
           </button>
         </div>
       </div>
-      <div className="pl-4 text-black">
+      <div className="pl-4 text-black bg-white dark:bg-gray-900 dark:text-white">
         <p>A Recurse project.</p>
 
         <a
@@ -144,7 +146,7 @@ export function WebcamDisplay() {
 
 export default function Home() {
   return (
-    <div>
+    <div className="bg-white text-black dark:bg-gray-900 dark:text-white">
       <WebcamDisplay />
     </div>
   );
