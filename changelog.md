@@ -1,3 +1,9 @@
+## [1.0.4] - 2025-10-17
+
+### 🐛 Bug Fixes
+
+- Adding font colors for dark mode
+
 ## [1.0.3] - 2025-10-16
 
 ### 🐛 Bug Fixes
