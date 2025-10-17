@@ -52,7 +52,7 @@ export function WebcamDisplay() {
   const styleConstraints: React.CSSProperties = {
     filter: "grayscale(100%)",
     objectFit: "cover",
-    // width: "320px",
+    width: "clamp(320px, 80vw, 640px)",
   };
 
   const webcamRef = useRef<Webcam>(null);
@@ -79,10 +79,15 @@ export function WebcamDisplay() {
 
   if (!authState.isAuthenticated) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white  dark:bg-gray-900 dark:text-white">
         <p>Please authenticate with the Recurse Center for access: </p>
         <p>
-          <a href="https://receipt.recurse.com/login">Login to Recurse</a>
+          <a
+            href="https://receipt.recurse.com/login"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            Login to Recurse
+          </a>
         </p>
       </div>
     );
@@ -136,13 +141,6 @@ export function WebcamDisplay() {
     </>
   );
 }
-
-// TODO:; set up preview
-// {imgSrc && (
-//   <div className="mt-6">
-//     <img src={imgSrc} alt="Captured" className="mx-auto" />
-//   </div>
-// )}
 
 export default function Home() {
   return (
