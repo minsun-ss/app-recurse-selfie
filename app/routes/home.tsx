@@ -2,7 +2,7 @@ import React, { useRef, useState, useCallback, useEffect } from "react";
 import type { Route } from "./+types/home";
 import Webcam from "react-webcam";
 import { convertImage, renderPhotoAndPrint } from "~/processing/image";
-import { COMPUTER_IMAGE_MAX_WIDTH } from "~/constants";
+import { COMPUTER_IMAGE_MAX_WIDTH, RECEIPT_AUTH_LOGIN } from "~/constants";
 
 // eslint-disable-next-line no-empty-pattern
 export function meta({}: Route.MetaArgs) {
@@ -20,6 +20,42 @@ function getCookie(name: string) {
 }
 
 /**
+ * Renders the photo preview section and any related errors to the
+ * API call.
+ */
+function getPhotoResult(
+  imagePreview: string, // this needs to be used later
+  statusCode: number,
+): React.ReactElement {
+  let message = <></>;
+  if (statusCode == 200) {
+    message = (
+      <>Photo was successfully printed to the Recurse receipt printer!</>
+    );
+  } else {
+    message = (
+      <>
+        Photo failed to successfully print (API response code: {statusCode}).
+        Make sure you have a valid login at{" "}
+        <a
+          href={RECEIPT_AUTH_LOGIN}
+          className="text-blue-600 underline hover:text-blue-800"
+        >
+          {RECEIPT_AUTH_LOGIN}
+        </a>{" "}
+        and refresh.
+      </>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-[640px] min-w-[340px] mx-auto items-center justify-center text-black bg-white dark:bg-gray-900 dark:text-white mt-4">
+      {message}
+    </div>
+  );
+}
+
+/**
  * The beautiful webcam display. Note to self, imgSrc isn't used, but could be
  * (for previews!) Future feature release, eh?
  * @returns
@@ -34,6 +70,7 @@ export function WebcamDisplay() {
   const [imgSrc, setImgSrc] = useState<string | null>(null); // we will use imgSrc eventually
   const [countdown, setCountdown] = useState<number | null>(null);
   const [inputText, setInputText] = useState<string | null>(null);
+  const [statusCode, setStatusCode] = useState<number | null>(null);
 
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -59,6 +96,7 @@ export function WebcamDisplay() {
 
   const webcamRef = useRef<Webcam>(null);
   const capture = useCallback(async () => {
+    setStatusCode(null);
     setCountdown(3);
 
     for (let i = 2; i >= 0; i--) {
@@ -67,11 +105,15 @@ export function WebcamDisplay() {
     }
 
     const screenshot = webcamRef.current?.getScreenshot() ?? null;
-    setImgSrc(screenshot);
     if (screenshot) {
       const resized = await convertImage(screenshot, COMPUTER_IMAGE_MAX_WIDTH);
-      renderPhotoAndPrint(resized, inputText, authState.printerToken);
-      setImgSrc(resized);
+      const results = await renderPhotoAndPrint(
+        resized,
+        inputText,
+        authState.printerToken,
+      );
+      setImgSrc(results.finalImage);
+      setStatusCode(results.statusCode);
     }
 
     // clear on end
@@ -130,7 +172,12 @@ export function WebcamDisplay() {
           </button>
         </div>
       </div>
-      <div className="pl-4 text-black bg-white dark:bg-gray-900 dark:text-white">
+
+      {statusCode != null && (
+        <div className="mt-4 px-4">{getPhotoResult(imgSrc, statusCode)}</div>
+      )}
+
+      <div className="pl-4 mt-8 py-8 text-black bg-white dark:bg-gray-900 dark:text-white">
         <p>A Recurse project.</p>
 
         <a
