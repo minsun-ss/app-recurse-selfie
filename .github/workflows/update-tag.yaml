@@ -1,0 +1,33 @@
+name: Update Tag
+run-name: ${{ github.actor }} is updating tag
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  update-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Update Tag
+        run: |
+          VERSION=$(cat package.json | grep version | cut -d '"' -f4)
+          git tag -f "v$VERSION"
+
+          git push origin "v$VERSION" -f
+          echo "Tagging using version: $VERSION"
