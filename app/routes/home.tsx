@@ -148,7 +148,7 @@ export function WebcamDisplay() {
               videoConstraints={videoConstraints}
               style={styleConstraints}
               screenshotFormat="image/png"
-              className="rounded-lg shadow-2xl "
+              className="-scale-x-100 rounded-lg shadow-2xl "
             />
 
             <div>
