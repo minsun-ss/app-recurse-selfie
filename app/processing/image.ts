@@ -7,6 +7,7 @@ import {
   RECURSE_COMPUTER_BORDER,
   NEW_PRINTER_ENDPOINT,
 } from "../constants";
+import { SPECIAL_MESSAGES } from "~/data/calendar";
 
 /**
  * Resizes the photo screenshot to appropriately render a Recurse computer
@@ -24,7 +25,10 @@ export function convertImage(
     const screenshotImg = new Image();
     screenshotImg.src = data;
     console.log(
-      "Screenshot: " + screenshotImg.width + " " + screenshotImg.height,
+      "convertImage screenshot: " +
+        screenshotImg.width +
+        " " +
+        screenshotImg.height,
     );
 
     screenshotImg.onload = async () => {
@@ -36,7 +40,7 @@ export function convertImage(
       const scale = imageTargetWidth / screenshotImg.width;
       const imageWidth = imageTargetWidth;
       const imageHeight = screenshotImg.height * scale;
-      console.log("image area: " + imageWidth + " " + imageHeight);
+      console.log("convertImage image: " + imageWidth + " " + imageHeight);
 
       const recurseComputerImg = new Image();
       recurseComputerImg.src = "/recurse.png";
@@ -100,7 +104,6 @@ export function convertImage(
         PHOTO_IMAGE_MAX_HEIGHT,
       );
 
-      // return the canvas
       resolve(canvas.toDataURL("image/png"));
     };
   });
@@ -116,26 +119,39 @@ export async function renderPhotoAndPrint(
   data: string,
   optionalText: string | null = null,
   printerToken: string | null | undefined,
-) {
+): Promise<{ finalImage: string; statusCode: number | null }> {
   const photoImg = new Image();
   const blob = await fetch(data).then((r) => r.blob());
   const imgUrl = URL.createObjectURL(blob);
 
   await new Promise((resolve) => {
+    console.log("renderPhotoAndPrint: Loading photoImg");
     photoImg.onload = resolve;
     photoImg.src = imgUrl;
   });
 
-  console.log("Screenshot: " + photoImg.width + " " + photoImg.height);
+  const today = new Date();
+  const monthDay = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const customMessage = SPECIAL_MESSAGES[monthDay];
+
+  // set up the custom message at the end of the receipt
+  let tailMessage = "Never Graduate!";
 
   // setting up the title logo
   const recurseTitleImg = new Image();
 
   // loading the octopus image
   const ollie = new Image();
-  ollie.src = "/ollie.png";
+  if (customMessage) {
+    ollie.src = customMessage.image;
+    tailMessage = customMessage.message;
+  } else {
+    ollie.src = "/ollie.png";
+  }
+
   await new Promise((res) => {
     ollie.onload = res;
+    console.log("renderPhotoAndPrint: Loading ollie");
   });
 
   const title = await new Promise<string>((resolve) => {
@@ -143,7 +159,7 @@ export async function renderPhotoAndPrint(
     const ctx = rcCanvas.getContext("2d");
     if (!ctx) return;
 
-    rcCanvas.width = 496;
+    rcCanvas.width = COMPUTER_IMAGE_MAX_WIDTH;
     rcCanvas.height = 72;
 
     ctx.fillStyle = "black";
@@ -156,6 +172,7 @@ export async function renderPhotoAndPrint(
   await new Promise((resolve) => {
     recurseTitleImg.onload = resolve;
     recurseTitleImg.src = title;
+    console.log("renderPhotoAndPrint: Loading recurseTitle");
   });
 
   // setting up the receipt
@@ -182,17 +199,27 @@ export async function renderPhotoAndPrint(
     .line("www.recurse.com")
     .line("")
     .line("")
-    .line("Never Graduate!")
+    .line(tailMessage)
     .cut("full")
     .encode();
 
+  let statusCode = null;
+
   if (printerToken != null) {
-    await sendReceiptExternalPrinter(result, printerToken);
+    console.log("renderPhotoAndPrint: Sending to printer");
+
+    statusCode = await sendReceiptExternalPrinter(result, printerToken);
   }
+
+  return {
+    finalImage: data,
+    statusCode: statusCode,
+  };
 }
 
 /**
- * Sends a request to the receipt printer on the external network.
+ * Sends a request to the receipt printer on the external network. Returns results of
+ * the return back.
  *
  * @param url receipt printer URL
  * @param photoData processed data to send
@@ -200,27 +227,42 @@ export async function renderPhotoAndPrint(
 async function sendReceiptExternalPrinter(
   photoData: Uint8Array,
   photoToken: string,
-) {
-  const response = await fetch(NEW_PRINTER_ENDPOINT, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/octet-stream",
-      "X-CSRF-Token": photoToken,
-    },
-    body: photoData,
-  });
+): Promise<number> {
+  try {
+    // timeout checks are required against CORS errors
+    const controller = new AbortController();
+    const timeoutID = setTimeout(() => controller.abort(), 10000);
 
-  if (!response.ok) {
-    throw new Error(`HTTP error, status: ${response.status}`);
-  }
+    const response = await fetch(NEW_PRINTER_ENDPOINT, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "X-CSRF-Token": photoToken,
+      },
+      body: photoData as BodyInit,
+      signal: controller.signal,
+    });
 
-  const contentType = response.headers.get("content-type");
-  if (contentType?.includes("application/json")) {
-    const resp = await response.json();
-    console.log("JSON response: ", resp);
-  } else {
-    const text = await response.text();
-    console.log("Non-JSON response: ", text);
+    clearTimeout(timeoutID);
+
+    if (!response.ok) {
+      console.error(`HTTP error, status: ${response.status}`);
+    } else {
+      const contentType = response.headers.get("content-type");
+
+      // Alex wasn't sure if the response was text or JSON, so handling both
+      if (contentType?.includes("application/json")) {
+        const resp = await response.json();
+        console.log("JSON response: ", resp);
+      } else {
+        const text = await response.text();
+        console.log("Non-JSON response: ", text);
+      }
+    }
+    return response.status;
+  } catch (error) {
+    console.error("Network or CORS failure:", error);
+    return 0;
   }
 }

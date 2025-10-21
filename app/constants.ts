@@ -7,3 +7,5 @@ export const RECURSE_COMPUTER_BORDER = 20;
 
 export const OLD_PRINTER_ENDPOINT = "/receipt/escpos";
 export const NEW_PRINTER_ENDPOINT = "https://receipt.recurse.com/escpos";
+
+export const RECEIPT_AUTH_LOGIN = "https://receipt.recurse.com/login";
