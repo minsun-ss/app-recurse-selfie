@@ -104,7 +104,6 @@ export function convertImage(
         PHOTO_IMAGE_MAX_HEIGHT,
       );
 
-      // return the canvas
       resolve(canvas.toDataURL("image/png"));
     };
   });
@@ -160,7 +159,7 @@ export async function renderPhotoAndPrint(
     const ctx = rcCanvas.getContext("2d");
     if (!ctx) return;
 
-    rcCanvas.width = 496;
+    rcCanvas.width = COMPUTER_IMAGE_MAX_WIDTH;
     rcCanvas.height = 72;
 
     ctx.fillStyle = "black";
@@ -219,7 +218,8 @@ export async function renderPhotoAndPrint(
 }
 
 /**
- * Sends a request to the receipt printer on the external network.
+ * Sends a request to the receipt printer on the external network. Returns results of
+ * the return back.
  *
  * @param url receipt printer URL
  * @param photoData processed data to send
@@ -229,6 +229,7 @@ async function sendReceiptExternalPrinter(
   photoToken: string,
 ): Promise<number> {
   try {
+    // timeout checks are required against CORS errors
     const controller = new AbortController();
     const timeoutID = setTimeout(() => controller.abort(), 10000);
 
@@ -249,6 +250,8 @@ async function sendReceiptExternalPrinter(
       console.error(`HTTP error, status: ${response.status}`);
     } else {
       const contentType = response.headers.get("content-type");
+
+      // Alex wasn't sure if the response was text or JSON, so handling both
       if (contentType?.includes("application/json")) {
         const resp = await response.json();
         console.log("JSON response: ", resp);
