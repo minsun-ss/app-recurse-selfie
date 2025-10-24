@@ -9,6 +9,140 @@ import {
 } from "../constants";
 import { SPECIAL_MESSAGES } from "~/data/calendar";
 
+async function debugCanvas(canvas: HTMLCanvasElement) {
+  const finalImg = canvas.toDataURL("image/png");
+  const previewImg = new Image();
+
+  await new Promise((resolve) => {
+    console.log("Loading photoImg");
+    previewImg.onload = resolve;
+    previewImg.src = finalImg;
+  });
+
+  let encoder = new ReceiptPrinterEncoder({
+    printerModel: "epson-tm-t88v",
+    imageMode: "raster", // this is required for pretty images
+  });
+
+  const bytes = encoder
+    .initialize()
+    .align("left")
+    .image(previewImg, previewImg.width, previewImg.height, "atkinson")
+    .align("center")
+    .encode();
+
+  const encodedBytes = Array.from(bytes)
+    .map((byte: any) => byte.toString(16).padStart(2, "0"))
+    .join("");
+
+  return encodedBytes;
+}
+
+/**
+ * Compose an array of images into a single image laid out vertically
+ * @param images array of image data
+ * @returns data of new composite image
+ */
+export function composeImages(images: string[]): Promise<string> {
+  return new Promise(async (resolve) => {
+    if (!Array.isArray(images) || images.length === 0) {
+      resolve("");
+      return;
+    }
+
+    // Load all images
+    const imgs: HTMLImageElement[] = await Promise.all(
+      images.map(
+        (src) =>
+          new Promise<HTMLImageElement>((res) => {
+            const img = new Image();
+            img.onload = () => res(img);
+            img.onerror = () => res(img); // resolve anyway so a broken image doesn't block
+            img.src = src;
+          })
+      )
+    );
+
+    // create new canvas to hold composite of images
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const padding = 32;
+    canvas.width = imgs[0].width;
+    canvas.height = imgs[0].height * imgs.length + padding * (imgs.length - 1);
+
+    // draw each image
+    let x = 0;
+    for (let i = 0; i < imgs.length; i++) {
+      const img = imgs[i];
+      const y = i * (img.height + padding);
+      ctx.drawImage(img, x, y, img.width, img.height);
+    }
+
+    // TODO: figure out if everything still works if I uncomment this
+    // resolve(canvas.toDataURL("image/png"));
+
+    const debugBytes = await debugCanvas(canvas);
+    console.log(debugBytes);
+    return debugBytes;
+  });
+}
+
+/**
+ * Resize the image to a target width/height
+ * @param data
+ * @param targetWidth
+ * @param targetHeight
+ * @returns
+ */
+export function resizeImage(
+  data: string,
+  targetWidth: number,
+  targetHeight: number
+): Promise<string> {
+  return new Promise((resolve) => {
+    const screenshotImg = new Image();
+    screenshotImg.src = data;
+
+    screenshotImg.onload = async () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // sets up the canvas
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      // Becuase the screenshot from the webcam may be too arbitrarily wide or
+      // long, we must not only select the appropriate part of the original
+      // canvas to target, but also resize as well
+
+      // TODO: do the resize when the camera is wider than taller and vice versa
+      const idealHeight = (screenshotImg.width * targetHeight) / targetWidth;
+      const idealWidth = screenshotImg.width;
+      const idealX = 0;
+      let idealY = Math.max((screenshotImg.height - idealHeight) / 2, 0);
+
+      // this draws the photobooth photo
+      ctx.drawImage(
+        screenshotImg,
+        idealX,
+        idealY,
+        idealWidth,
+        idealHeight,
+        0,
+        0,
+        targetWidth,
+        targetHeight
+      );
+
+      // get the canvas image as a data URL
+      resolve(canvas.toDataURL("image/png"));
+    };
+  });
+}
+
 /**
  * Resizes the photo screenshot to appropriately render a Recurse computer
  * image to something appropriate for the Recurse and resizes it
@@ -19,7 +153,7 @@ import { SPECIAL_MESSAGES } from "~/data/calendar";
  */
 export function convertImage(
   data: string,
-  targetWidth: number,
+  targetWidth: number
 ): Promise<string> {
   return new Promise((resolve) => {
     const screenshotImg = new Image();
@@ -28,7 +162,7 @@ export function convertImage(
       "convertImage screenshot: " +
         screenshotImg.width +
         " " +
-        screenshotImg.height,
+        screenshotImg.height
     );
 
     screenshotImg.onload = async () => {
@@ -65,7 +199,7 @@ export function convertImage(
         0,
         0,
         recurseWidth,
-        Math.floor(recurseHeight / 8) * 8,
+        Math.floor(recurseHeight / 8) * 8
       );
 
       // set up the date
@@ -101,12 +235,57 @@ export function convertImage(
         RECURSE_COMPUTER_BORDER,
         RECURSE_COMPUTER_BORDER + 10,
         PHOTO_IMAGE_MAX_WIDTH,
-        PHOTO_IMAGE_MAX_HEIGHT,
+        PHOTO_IMAGE_MAX_HEIGHT
       );
 
       resolve(canvas.toDataURL("image/png"));
     };
   });
+}
+
+/**
+ * Prints an image
+ * @param data
+ * @param printerToken
+ * @returns
+ */
+export async function simplePrint(
+  data: string,
+  printerToken: string | null | undefined
+): Promise<{ finalImage: string; statusCode: number | null }> {
+  const photoImg = new Image();
+  const blob = await fetch(data).then((r) => r.blob());
+  const imgUrl = URL.createObjectURL(blob);
+
+  await new Promise((resolve) => {
+    photoImg.onload = resolve;
+    photoImg.src = imgUrl;
+  });
+
+  // setting up the receipt
+  let encoder = new ReceiptPrinterEncoder({
+    printerModel: "epson-tm-t88v",
+    imageMode: "raster", // this is required for pretty images
+  });
+
+  const result = encoder
+    .initialize()
+    .align("left")
+    .image(photoImg, photoImg.width, photoImg.height, "atkinson")
+    .align("center")
+    .encode();
+
+  let statusCode = null;
+
+  if (printerToken != null) {
+    console.log("simplePrint: Sending to printer");
+    statusCode = await sendReceiptExternalPrinter(result, printerToken);
+  }
+
+  return {
+    finalImage: data,
+    statusCode: statusCode,
+  };
 }
 
 /**
@@ -118,7 +297,7 @@ export function convertImage(
 export async function renderPhotoAndPrint(
   data: string,
   optionalText: string | null = null,
-  printerToken: string | null | undefined,
+  printerToken: string | null | undefined
 ): Promise<{ finalImage: string; statusCode: number | null }> {
   const photoImg = new Image();
   const blob = await fetch(data).then((r) => r.blob());
@@ -226,7 +405,7 @@ export async function renderPhotoAndPrint(
  */
 async function sendReceiptExternalPrinter(
   photoData: Uint8Array,
-  photoToken: string,
+  photoToken: string
 ): Promise<number> {
   try {
     // timeout checks are required against CORS errors

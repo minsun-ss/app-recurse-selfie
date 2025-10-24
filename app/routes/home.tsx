@@ -1,8 +1,27 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import type { Route } from "./+types/home";
 import Webcam from "react-webcam";
-import { convertImage, renderPhotoAndPrint } from "~/processing/image";
+import {
+  composeImages,
+  convertImage,
+  renderPhotoAndPrint,
+  resizeImage,
+  simplePrint,
+} from "~/processing/image";
 import { COMPUTER_IMAGE_MAX_WIDTH, RECEIPT_AUTH_LOGIN } from "~/constants";
+import classNames from "classnames";
+
+// video and style constraints
+const videoConstraints = {
+  facingMode: "user",
+};
+const styleConstraints: React.CSSProperties = {
+  filter: "grayscale(100%)",
+  objectFit: "cover",
+  width: "clamp(320px, 80vw, 640px)",
+};
+
+type PhotoMode = "selfie" | "photobooth";
 
 // eslint-disable-next-line no-empty-pattern
 export function meta({}: Route.MetaArgs) {
@@ -25,7 +44,7 @@ function getCookie(name: string) {
  */
 function getPhotoResult(
   imagePreview: string, // this needs to be used later
-  statusCode: number,
+  statusCode: number
 ): React.ReactElement {
   let message = <></>;
   if (statusCode == 200) {
@@ -72,6 +91,10 @@ export function WebcamDisplay() {
   const [inputText, setInputText] = useState<string | null>(null);
   const [statusCode, setStatusCode] = useState<number | null>(null);
 
+  const [photoMode, setPhotoMode] = useState<PhotoMode>("selfie");
+  const [currentPhoto, setCurrentPhoto] = useState<number | null>(null);
+  const webcamRef = useRef<Webcam>(null);
+
   useEffect(() => {
     if (import.meta.env.DEV) {
       document.cookie = "receipt_csrf=dev_token; path=/";
@@ -84,17 +107,19 @@ export function WebcamDisplay() {
     });
   }, []);
 
-  // set up video and style constraints
-  const videoConstraints = {
-    facingMode: "user",
-  };
-  const styleConstraints: React.CSSProperties = {
-    filter: "grayscale(100%)",
-    objectFit: "cover",
-    width: "clamp(320px, 80vw, 640px)",
+  const takeScreenshot = async () => {
+    setCountdown(3);
+
+    for (let i = 2; i >= 0; i--) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setCountdown(i);
+    }
+
+    const screenshot = webcamRef.current?.getScreenshot() ?? null;
+    setCountdown(null);
+    return screenshot;
   };
 
-  const webcamRef = useRef<Webcam>(null);
   const capture = useCallback(async () => {
     setStatusCode(null);
     setCountdown(3);
@@ -110,7 +135,7 @@ export function WebcamDisplay() {
       const results = await renderPhotoAndPrint(
         resized,
         inputText,
-        authState.printerToken,
+        authState.printerToken
       );
       setImgSrc(results.finalImage);
       setStatusCode(results.statusCode);
@@ -120,6 +145,27 @@ export function WebcamDisplay() {
     setCountdown(null);
     setInputText(null);
   }, [inputText, authState.printerToken]);
+
+  const multiCapture = async () => {
+    setCurrentPhoto(1);
+    const imgs: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      const screenshot = await takeScreenshot();
+      if (screenshot) {
+        const img = await resizeImage(screenshot, 512, 384);
+        imgs.push(img);
+      }
+      setCurrentPhoto((curr) => (curr ?? 0) + 1);
+    }
+    setCurrentPhoto(null);
+    const composed = await composeImages(imgs);
+
+    if (composed) {
+      const results = await simplePrint(composed, authState.printerToken);
+      setImgSrc(results.finalImage);
+      setStatusCode(results.statusCode);
+    }
+  };
 
   if (!authState.isAuthenticated) {
     return (
@@ -139,9 +185,32 @@ export function WebcamDisplay() {
 
   return (
     <>
+      <div className="p-4 flex gap-2 text-black dark:text-white">
+        <button
+          className={classNames(
+            "border border-black dark:border-gray-200 rounded-lg p-2 hover:cursor-pointer",
+            { "bg-blue-200 text-black": photoMode === "selfie" }
+          )}
+          onClick={() => setPhotoMode("selfie")}
+        >
+          selfie
+        </button>
+        <button
+          className={classNames(
+            "border border-black dark:border-gray-200 rounded-lg p-2 hover:cursor-pointer",
+            { "bg-blue-200 text-black": photoMode === "photobooth" }
+          )}
+          onClick={() => setPhotoMode("photobooth")}
+        >
+          photobooth
+        </button>
+      </div>
       <div className="flex items-center justify-center h-[calc(100vh-3rem)] text-black bg-white dark:bg-gray-900 dark:text-white">
         <div className="flex flex-col min-[800px]:flex-row items-center justify-center text-center">
           <div className="relative w-full max-w-md flex flex-col items-center">
+            {photoMode === "photobooth" && currentPhoto != null && (
+              <div>taking photo {currentPhoto}/4</div>
+            )}
             <Webcam
               ref={webcamRef}
               audio={false}
@@ -162,7 +231,7 @@ export function WebcamDisplay() {
           </div>
           <button
             type="button"
-            onClick={capture}
+            onClick={photoMode === "selfie" ? capture : multiCapture}
             disabled={countdown != null}
             className="mt-2 min-[800px]:ml-8  bg-red-600 border-2 border-white rounded-full px-6 py-3 text-xl font-bold text-white hover:bg-red-500 active:scale-95 transition-transform"
           >
