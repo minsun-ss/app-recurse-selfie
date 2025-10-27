@@ -1,3 +1,10 @@
+## [1.2.0] - 2025-10-27
+
+### 🚀 Features
+
+- Minor fixes to the print setup plus update holiday calendar
+- Removed debugprint
+
 ## [1.1.0] - 2025-10-21
 
 ### 🚀 Features
