@@ -83,20 +83,53 @@ export const SPECIAL_MESSAGES: Record<string, SpecialMessage> = {
     image: "/ollie-thanksgiving.png",
   },
 
+  // Advent of Code is only 12 days this year!
   "12-01": {
-    message: "Happy Holidays and Advent of Code!",
+    message: "Happy Holidays and do Advent of Code!",
     image: "/ollie-christmas.png",
   },
   "12-02": {
-    message: "Happy Holidays and Advent of Code!",
+    message: "Happy Holidays and do Advent of Code!",
     image: "/ollie-christmas.png",
   },
   "12-03": {
-    message: "Happy Holidays and Advent of Code!",
+    message: "Happy Holidays and do Advent of Code!",
     image: "/ollie-christmas.png",
   },
   "12-04": {
-    message: "Happy Holidays and Advent of Code!",
+    message: "Happy Holidays and do Advent of Code!",
+    image: "/ollie-christmas.png",
+  },
+  "12-05": {
+    message: "Happy Holidays and do Advent of Code!",
+    image: "/ollie-christmas.png",
+  },
+  "12-06": {
+    message: "Happy Holidays and do Advent of Code!",
+    image: "/ollie-christmas.png",
+  },
+  "12-07": {
+    message: "Happy Holidays and do Advent of Code!",
+    image: "/ollie-christmas.png",
+  },
+  "12-08": {
+    message: "Happy Holidays and do Advent of Code!",
+    image: "/ollie-christmas.png",
+  },
+  "12-09": {
+    message: "Happy Holidays and do Advent of Code!",
+    image: "/ollie-christmas.png",
+  },
+  "12-10": {
+    message: "Happy Holidays and do Advent of Code!",
+    image: "/ollie-christmas.png",
+  },
+  "12-11": {
+    message: "Happy Holidays and do Advent of Code!",
+    image: "/ollie-christmas.png",
+  },
+  "12-12": {
+    message: "Happy Holidays and do Advent of Code!",
     image: "/ollie-christmas.png",
   },
 };

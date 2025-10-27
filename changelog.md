@@ -1,3 +1,23 @@
+## [1.1.0] - 2025-10-21
+
+### 🚀 Features
+
+- First commit
+- Set up countdown, snapshot of image
+- Baked in a working demo
+- We added raster mode and css property nit
+- Fix page
+- Added configuration for cloudflare deployment
+- Add the new endpoint
+- Fix all things related to the cloudflare deployment
+- Fix the post request
+
+### 🐛 Bug Fixes
+
+- Remove the old endpoint
+- Comment out ssl to see if the new endpoint works
+- Adding font colors for dark mode
+
 ## [1.0.4] - 2025-10-17
 
 ### 🐛 Bug Fixes
