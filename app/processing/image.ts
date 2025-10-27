@@ -51,6 +51,7 @@ export function composeImages(images: string[]): Promise<string> {
       ctx.drawImage(img, x, y, img.width, img.height);
     }
 
+    console.log("Processing composeImages");
     resolve(canvas.toDataURL("image/png"));
   });
 }

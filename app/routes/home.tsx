@@ -7,7 +7,6 @@ import {
   renderPhotoAndPrint,
   resizeImage,
   simplePrint,
-  sendReceipt,
 } from "~/processing/image";
 import { COMPUTER_IMAGE_MAX_WIDTH, RECEIPT_AUTH_LOGIN } from "~/constants";
 import classNames from "classnames";
