@@ -44,7 +44,7 @@ function getCookie(name: string) {
  */
 function getPhotoResult(
   imagePreview: string, // this needs to be used later
-  statusCode: number
+  statusCode: number,
 ): React.ReactElement {
   let message = <></>;
   if (statusCode == 200) {
@@ -75,8 +75,9 @@ function getPhotoResult(
 }
 
 /**
- * The beautiful webcam display. Note to self, imgSrc isn't used, but could be
- * (for previews!) Future feature release, eh?
+ * The beautiful webcam display.
+ *
+ * TODO: refactor
  * @returns
  */
 export function WebcamDisplay() {
@@ -135,7 +136,7 @@ export function WebcamDisplay() {
       const results = await renderPhotoAndPrint(
         resized,
         inputText,
-        authState.printerToken
+        authState.printerToken,
       );
       setImgSrc(results.finalImage);
       setStatusCode(results.statusCode);
@@ -189,7 +190,7 @@ export function WebcamDisplay() {
         <button
           className={classNames(
             "border border-black dark:border-gray-200 rounded-lg p-2 hover:cursor-pointer",
-            { "bg-blue-200 text-black": photoMode === "selfie" }
+            { "bg-blue-200 text-black": photoMode === "selfie" },
           )}
           onClick={() => setPhotoMode("selfie")}
         >
@@ -198,7 +199,7 @@ export function WebcamDisplay() {
         <button
           className={classNames(
             "border border-black dark:border-gray-200 rounded-lg p-2 hover:cursor-pointer",
-            { "bg-blue-200 text-black": photoMode === "photobooth" }
+            { "bg-blue-200 text-black": photoMode === "photobooth" },
           )}
           onClick={() => setPhotoMode("photobooth")}
         >
