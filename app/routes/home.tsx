@@ -10,6 +10,7 @@ import {
 } from "~/processing/image";
 import { COMPUTER_IMAGE_MAX_WIDTH, RECEIPT_AUTH_LOGIN } from "~/constants";
 import classNames from "classnames";
+import Overlay from "~/components/Overlay";
 
 // video and style constraints
 const videoConstraints = {
@@ -44,7 +45,7 @@ function getCookie(name: string) {
  */
 function getPhotoResult(
   imagePreview: string, // this needs to be used later
-  statusCode: number,
+  statusCode: number
 ): React.ReactElement {
   let message = <></>;
   if (statusCode == 200) {
@@ -108,16 +109,19 @@ export function WebcamDisplay() {
     });
   }, []);
 
-  const takeScreenshot = async () => {
+  const takeScreenshot = async (lastOne: boolean) => {
     setCountdown(3);
 
     for (let i = 2; i >= 0; i--) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setCountdown(i);
     }
+    // let it display 0 for a split second
+    await new Promise((resolve) => setTimeout(resolve, 500));
 
     const screenshot = webcamRef.current?.getScreenshot() ?? null;
-    setCountdown(null);
+    setCountdown(3);
+    if (lastOne) setCountdown(null);
     return screenshot;
   };
 
@@ -136,7 +140,7 @@ export function WebcamDisplay() {
       const results = await renderPhotoAndPrint(
         resized,
         inputText,
-        authState.printerToken,
+        authState.printerToken
       );
       setImgSrc(results.finalImage);
       setStatusCode(results.statusCode);
@@ -151,15 +155,15 @@ export function WebcamDisplay() {
     setCurrentPhoto(1);
     const imgs: string[] = [];
     for (let i = 0; i < 4; i++) {
-      const screenshot = await takeScreenshot();
+      const screenshot = await takeScreenshot(i === 3);
       if (screenshot) {
         const img = await resizeImage(screenshot, 512, 384);
         imgs.push(img);
       }
       setCurrentPhoto((curr) => (curr ?? 0) + 1);
     }
-    setCurrentPhoto(null);
     const composed = await composeImages(imgs);
+    setCurrentPhoto(null);
 
     if (composed) {
       const results = await simplePrint(composed, authState.printerToken);
@@ -190,7 +194,7 @@ export function WebcamDisplay() {
         <button
           className={classNames(
             "border border-black dark:border-gray-200 rounded-lg p-2 hover:cursor-pointer",
-            { "bg-blue-200 text-black": photoMode === "selfie" },
+            { "bg-blue-200 text-black": photoMode === "selfie" }
           )}
           onClick={() => setPhotoMode("selfie")}
         >
@@ -199,7 +203,7 @@ export function WebcamDisplay() {
         <button
           className={classNames(
             "border border-black dark:border-gray-200 rounded-lg p-2 hover:cursor-pointer",
-            { "bg-blue-200 text-black": photoMode === "photobooth" },
+            { "bg-blue-200 text-black": photoMode === "photobooth" }
           )}
           onClick={() => setPhotoMode("photobooth")}
         >
@@ -212,14 +216,17 @@ export function WebcamDisplay() {
             {photoMode === "photobooth" && currentPhoto != null && (
               <div>taking photo {currentPhoto}/4</div>
             )}
-            <Webcam
-              ref={webcamRef}
-              audio={false}
-              videoConstraints={videoConstraints}
-              style={styleConstraints}
-              screenshotFormat="image/png"
-              className="-scale-x-100 rounded-lg shadow-2xl "
-            />
+            <div>
+              {countdown === 0 && <Overlay />}
+              <Webcam
+                ref={webcamRef}
+                audio={false}
+                videoConstraints={videoConstraints}
+                style={styleConstraints}
+                screenshotFormat="image/png"
+                className="-scale-x-100 rounded-lg shadow-2xl "
+              />
+            </div>
 
             <div>
               <textarea
@@ -234,11 +241,11 @@ export function WebcamDisplay() {
             type="button"
             onClick={photoMode === "selfie" ? capture : multiCapture}
             disabled={countdown != null}
-            className="mt-2 min-[800px]:ml-8  bg-red-600 border-2 border-white rounded-full px-6 py-3 text-xl font-bold text-white hover:bg-red-500 active:scale-95 transition-transform"
+            className="mt-2 min-[800px]:ml-8 bg-red-600 border-2 border-white rounded-full px-6 py-3 text-xl font-bold text-white hover:bg-red-500 active:scale-95 transition-transform"
           >
-            {countdown !== null
-              ? `Ready in ${countdown}...`
-              : "Take a picture!"}
+            {countdown === null && "Take a picture!"}
+            {countdown === 0 && "📸 SNAP 📸"}
+            {countdown !== null && countdown > 0 && `Ready in ${countdown}...`}
           </button>
         </div>
       </div>
